@@ -29,9 +29,6 @@ public class ThirdPersonBirdController : MonoBehaviour
         postProcessVolume.profile.TryGetSettings<DepthOfField>(out depthOfField);
         
         depthOfFieldFocusDistance = new FloatParameter();
-        
-        creatureFlyingSystem.enabledFlyingLogic = true;
-        creatureFlyingSystem.flappingWings = true;
     }
 
     void Update()
@@ -40,6 +37,7 @@ public class ThirdPersonBirdController : MonoBehaviour
         {
             CameraControlLogic();
 
+            // Take off / grab
             if (Input.GetKeyUp(KeyCode.Space))
             {
                 if (creatureFlyingSystem.inAir)
@@ -48,11 +46,22 @@ public class ThirdPersonBirdController : MonoBehaviour
                     creatureFlyingSystem.TakeOff();
             }
 
+            // Fly forward / stop
             if (Input.GetKey(KeyCode.W))
-                creatureFlyingSystem.AddForwardMovement(1.0f);
+                creatureFlyingSystem.FlyForward();
+            else if (Input.GetKey(KeyCode.S))
+                creatureFlyingSystem.SlowDown();
+            else if (Input.GetKey(KeyCode.S))
+                creatureFlyingSystem.slowingDown = false;
 
+            // Boost on / off
+            if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift))
+                creatureFlyingSystem.boosting = !creatureFlyingSystem.boosting;
+
+            // Turn left / right
             creatureFlyingSystem.AddHorizontalMovement(Input.GetAxis("Mouse X"));
 
+            // Camera effect for diving
             if (creatureFlyingSystem.diving)
             {
                 cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, new Vector3(0.0f, 0.75f, -7.0f), 0.95f * Time.deltaTime);

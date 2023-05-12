@@ -223,8 +223,10 @@ MonoBehaviour:
   meshTransform: {fileID: 241187378}
   cameraTransform: {fileID: 963194228}
   cameraLookAtOffsetY: 0.5
-  flyingSpeed: 15
-  maximumFlyingSpeed: 20
+  normalFlyingSpeed: 15
+  maximumFlyingSpeed: 40
+  boostAcceleration: 12
+  slowDownAcceleration: 10
   airDrag: 2.5
   horizontalTurningSpeed: 2.5
   verticalTurningSpeed: 10
@@ -232,7 +234,6 @@ MonoBehaviour:
   rotationZSmoothingFactor: 0.125
   canDive: 1
   divingStartAngle: 20
-  divingEndAngle: 90
   canFlyInAnyDirection: 0
   g: 9.8
   calculateStaminaConsumption: 1
@@ -308,7 +309,10 @@ MonoBehaviour:
   inAir: 0
   flyingDirection: {x: 0, y: 0, z: 0}
   flyingVelocity: {x: 0, y: 0, z: 0}
-  flappingWings: 0
+  flyingInNormalSpeed: 0
+  boosting: 0
+  slowingDown: 0
+  stop: 0
   diving: 0
 --- !u!4 &680802699
 Transform:

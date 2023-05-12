@@ -11,8 +11,10 @@ public class CreatureFlyingSystem : MonoBehaviour
     public float cameraLookAtOffsetY = 0.5f;
 
     [Header("Creature Attributes")]
-    public float flyingSpeed = 15.0f;
-    public float maximumFlyingSpeed = 20.0f;
+    public float normalFlyingSpeed = 15.0f;
+    public float maximumFlyingSpeed = 40.0f;
+    public float boostAcceleration = 12.0f;
+    public float slowDownAcceleration = 6.0f;
     [Range(0.0f, 10.0f)]
     public float airDrag = 2.5f;
     public float horizontalTurningSpeed = 2.0f;
@@ -24,8 +26,6 @@ public class CreatureFlyingSystem : MonoBehaviour
     public bool canDive = true;
     [Range(0.0f, 90.0f)]
     public float divingStartAngle = 20.0f;
-    [Range(0.0f, 90.0f)]
-    public float divingEndAngle = 90.0f;
     public bool canFlyInAnyDirection = false;
 
     [Header("Custom Attributes")]
@@ -48,10 +48,17 @@ public class CreatureFlyingSystem : MonoBehaviour
     public Vector3 flyingDirection;
 
     [HideInInspector]
+    private float currentFlyingSpeed;
+
+    [HideInInspector]
     public Vector3 flyingVelocity;
 
     [HideInInspector]
-    public bool flappingWings = false;
+    public bool flyingInNormalSpeed = false;
+    [HideInInspector]
+    public bool boosting = false;
+    [HideInInspector]
+    public bool slowingDown = false, stop = false;
 
     private Vector3 targetCharacterPosition;
 
@@ -69,6 +76,7 @@ public class CreatureFlyingSystem : MonoBehaviour
     public bool diving = false;
     private float verticalAcceleration;
     private float verticalSpeed;
+    private float idealFlyingSpeed;
 
     // Rotation Lerp variables
     private float increaseAngle;
@@ -80,7 +88,8 @@ public class CreatureFlyingSystem : MonoBehaviour
 
     void Update()
     {
-        Fly();
+        if (enabledFlyingLogic)
+            Fly();
     }
 
     public void TakeOff()
@@ -93,10 +102,32 @@ public class CreatureFlyingSystem : MonoBehaviour
 
     }
 
-    public void AddForwardMovement(float value)
+    public void Land()
     {
-        flappingWings = true;
+        inAir = false;
+    }
 
+    public void FlyForward()
+    {
+        flyingInNormalSpeed = true;
+        slowingDown = false;
+        stop = false;
+    }
+
+    public void SlowDown()
+    {
+        boosting = false;
+        flyingInNormalSpeed = false;
+        slowingDown = true;
+        stop = false;
+    }
+
+    public void FullStop()
+    {
+        boosting = false;
+        flyingInNormalSpeed = false;
+        slowingDown = false;
+        stop = true;
     }
 
     public void AddHorizontalMovement(float value)
@@ -129,19 +160,13 @@ public class CreatureFlyingSystem : MonoBehaviour
         }
     }
 
-    void AddVerticalMovement(float value)
-    {
-        //targetMeshRotationX = targetMeshRotationX - verticalTurningSpeed * value;
-        //targetMeshRotationX = Mathf.Clamp(targetMeshRotationX - verticalTurningSpeed * value, -maximumDivingAngle, maximumDivingAngle);
-    }
-
     public void Fly()
     {
         if (enabledFlyingLogic)
         {
             if (inAir)
             {
-                if (flappingWings)
+                if (!slowingDown)
                 {
                     rotationYComponent = horizontalTurningSpeed * Time.deltaTime;
 
@@ -164,40 +189,67 @@ public class CreatureFlyingSystem : MonoBehaviour
                     }
 
                     meshTransform.localRotation = Quaternion.Euler(RotationLerp(meshTransform.localRotation.eulerAngles.x, targetMeshLocalRotation.eulerAngles.x, verticalTurningSpeed * Time.deltaTime), currentMeshLocalRotationY, targetMeshLocalRotationZ);
+                }
 
-                    // To maintain horizontal flying, lift must be equal to g
-                    if (meshTransform.localRotation.eulerAngles.x < 90.0f && meshTransform.localRotation.eulerAngles.x > divingStartAngle)
+                // Diving
+                if (meshTransform.localRotation.eulerAngles.x < 90.0f && meshTransform.localRotation.eulerAngles.x > divingStartAngle)
+                {
+                    diving = true;
+
+                    if (boosting)
+                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
+                    else if (slowingDown || stop)
                     {
-                        diving = true;
-
-                        flyingVelocity = meshTransform.forward * flyingSpeed;
-
-                        verticalAcceleration = -g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
-                        verticalSpeed += verticalAcceleration * Time.deltaTime;
-
-                        targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime + new Vector3(0.0f, verticalSpeed * Time.deltaTime - 0.5f * verticalAcceleration * Time.deltaTime * Time.deltaTime, 0.0f);
+                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
+                        verticalAcceleration = slowDownAcceleration - g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
                     }
                     else
                     {
-                        diving = false;
-                            
-                        if (verticalSpeed < -0.1f)
-                            verticalSpeed += airDrag * Time.deltaTime;
+                        idealFlyingSpeed = normalFlyingSpeed + g * Mathf.Sin(meshTransform.localRotation.eulerAngles.x * Mathf.Deg2Rad);
+                        
+                        if (currentFlyingSpeed < idealFlyingSpeed)
+                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, idealFlyingSpeed);
                         else
-                            verticalSpeed = 0.0f;
+                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, idealFlyingSpeed, maximumFlyingSpeed);
 
-                        flyingVelocity = meshTransform.forward * flyingSpeed + new Vector3();
-                        targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime;
-                        //targetCharacterPosition = Vector3.Lerp(targetCharacterPosition, rootTransform.position + flyingVelocity * Time.deltaTime, 0.1f * Time.deltaTime);
+                        verticalAcceleration = -g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
                     }
 
-                    rootTransform.position = targetCharacterPosition;
-                    //rootTransform.position = Vector3.Lerp(rootTransform.position, targetCharacterPosition, 0.125f);
+                    flyingVelocity = meshTransform.forward * currentFlyingSpeed;
+
+                    verticalSpeed = verticalSpeed + verticalAcceleration * Time.deltaTime;
+
+                    targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime + new Vector3(0.0f, Mathf.Clamp(verticalSpeed * Time.deltaTime - 0.5f * verticalAcceleration * Time.deltaTime * Time.deltaTime, -99999999.0f, 0.0f), 0.0f);
                 }
                 else
                 {
+                    diving = false;
 
+                    if (verticalSpeed < -0.1f)
+                        verticalSpeed += airDrag * Time.deltaTime;
+                    else
+                        verticalSpeed = 0.0f;
+
+                    if (boosting)
+                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
+                    else if (slowingDown || stop)
+                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
+                    else
+                    {
+                        idealFlyingSpeed = normalFlyingSpeed + verticalSpeed;
+
+                        if (currentFlyingSpeed < idealFlyingSpeed)
+                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, idealFlyingSpeed);
+                        else
+                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, idealFlyingSpeed, maximumFlyingSpeed);
+                    }
+                    
+                    flyingVelocity = meshTransform.forward * currentFlyingSpeed;
+
+                    targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime;
                 }
+                
+                rootTransform.position = targetCharacterPosition;
             }
         }
     }
