@@ -11,33 +11,39 @@ public class CreatureFlyingSystem : MonoBehaviour
     public float cameraLookAtOffsetY = 0.5f;
 
     [Header("Creature Attributes")]
-    public float normalFlyingSpeed = 15.0f;
-    public float maximumFlyingSpeed = 40.0f;
+    public float normalFlyingSpeed = 10.0f;
+    public float maximumFlyingSpeed = 15.0f;
     public float boostAcceleration = 12.0f;
-    public float slowDownAcceleration = 6.0f;
+    public float slowDownAcceleration = 10.0f;
     [Range(0.0f, 10.0f)]
     public float airDrag = 2.5f;
-    public float horizontalTurningSpeed = 2.0f;
-    public float verticalTurningSpeed = 10.0f;
-    public float maximumTurningRotationZ = 30.0f;
+    public float meshHorizontalTurningSpeed = 2.5f;
+    public float meshVerticalTurningSpeed = 10.0f;
+    public float meshMaximumTurningRotationZ = 25.0f;
     [Range(0.0f, 1.0f)]
-    public float rotationZSmoothingFactor = 0.25f;
+    public float meshRotationZSmoothingFactor = 0.125f;
 
     public bool canDive = true;
     [Range(0.0f, 90.0f)]
-    public float divingStartAngle = 20.0f;
+    public float divingStartAngle = 30.0f;
     public bool canFlyInAnyDirection = false;
 
     [Header("Custom Attributes")]
     public float g = 9.8f;
     public bool calculateStaminaConsumption = true;
-    public AnimationCurve speedStaminaRatioAnimationCurve;
+    public float maximumStamina = 200.0f;
+    public float staminaDecreaseSpeed = 0.25f;
+    public float staminaDecreaseSpeedWhenBoosting = 1.5f;
+    public AnimationCurve speedTirednessRatioAnimationCurve;
 
     public bool calculateCarryingWeight = true;
     public float maximumCarryingWeight = 100.0f;
     public AnimationCurve speedCarryingWeightRatioAnimationCurve;
 
     // Flying attributes
+    [HideInInspector]
+    public bool thirdPersonViewMode = true;
+
     [HideInInspector]
     public bool enabledFlyingLogic = true;
 
@@ -81,15 +87,33 @@ public class CreatureFlyingSystem : MonoBehaviour
     // Rotation Lerp variables
     private float increaseAngle;
 
+    [HideInInspector]
+    public float currentStamina;
+    private float staminaFactor = 1.0f;
+
+    [HideInInspector]
+    public float currentCarryingWeight;
+    private float carryingWeightFactor = 1.0f;
+
     void Start()
     {
-
+        currentStamina = maximumStamina;
     }
 
     void Update()
     {
         if (enabledFlyingLogic)
             Fly();
+    }
+
+    public void SwitchToFirstPersonViewMode()
+    {
+        thirdPersonViewMode = false;
+    }
+
+    public void SwitchToThirdPersonViewMode()
+    {
+        thirdPersonViewMode = true;
     }
 
     public void TakeOff()
@@ -168,7 +192,7 @@ public class CreatureFlyingSystem : MonoBehaviour
             {
                 if (!slowingDown)
                 {
-                    rotationYComponent = horizontalTurningSpeed * Time.deltaTime;
+                    rotationYComponent = meshHorizontalTurningSpeed * Time.deltaTime;
 
                     currentMeshLocalRotationY = RotationLerp(meshTransform.localRotation.eulerAngles.y, targetMeshLocalRotation.eulerAngles.y, rotationYComponent);
 
@@ -181,15 +205,25 @@ public class CreatureFlyingSystem : MonoBehaviour
                         if (rotationYAlignmentPercentage > 0.985f)
                             alignedToTargetDirection = true;
 
-                        targetMeshLocalRotationZ = RotationLerp(meshTransform.localRotation.eulerAngles.z, turningDirection * maximumTurningRotationZ, rotationYAlignmentPercentage * rotationZSmoothingFactor);
+                        targetMeshLocalRotationZ = RotationLerp(meshTransform.localRotation.eulerAngles.z, turningDirection * meshMaximumTurningRotationZ, rotationYAlignmentPercentage * meshRotationZSmoothingFactor);
                     }
                     else
                     {
                         targetMeshLocalRotationZ = RotationLerp(meshTransform.localRotation.eulerAngles.z, 0.0f, rotationYComponent);
                     }
 
-                    meshTransform.localRotation = Quaternion.Euler(RotationLerp(meshTransform.localRotation.eulerAngles.x, targetMeshLocalRotation.eulerAngles.x, verticalTurningSpeed * Time.deltaTime), currentMeshLocalRotationY, targetMeshLocalRotationZ);
+                    meshTransform.localRotation = Quaternion.Euler(RotationLerp(meshTransform.localRotation.eulerAngles.x, targetMeshLocalRotation.eulerAngles.x, meshVerticalTurningSpeed * Time.deltaTime), currentMeshLocalRotationY, targetMeshLocalRotationZ);
                 }
+
+                if (calculateStaminaConsumption)
+                    staminaFactor = speedTirednessRatioAnimationCurve.Evaluate(1.0f - currentStamina / maximumStamina);
+                else
+                    staminaFactor = 1.0f;
+
+                if (calculateCarryingWeight)
+                    carryingWeightFactor = speedCarryingWeightRatioAnimationCurve.Evaluate(currentCarryingWeight / maximumCarryingWeight);
+                else
+                    carryingWeightFactor = 1.0f;
 
                 // Diving
                 if (meshTransform.localRotation.eulerAngles.x < 90.0f && meshTransform.localRotation.eulerAngles.x > divingStartAngle)
@@ -206,7 +240,7 @@ public class CreatureFlyingSystem : MonoBehaviour
                     else
                     {
                         idealFlyingSpeed = normalFlyingSpeed + g * Mathf.Sin(meshTransform.localRotation.eulerAngles.x * Mathf.Deg2Rad);
-                        
+
                         if (currentFlyingSpeed < idealFlyingSpeed)
                             currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, idealFlyingSpeed);
                         else
@@ -214,6 +248,8 @@ public class CreatureFlyingSystem : MonoBehaviour
 
                         verticalAcceleration = -g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
                     }
+
+                    currentFlyingSpeed *= staminaFactor * carryingWeightFactor;
 
                     flyingVelocity = meshTransform.forward * currentFlyingSpeed;
 
@@ -231,11 +267,24 @@ public class CreatureFlyingSystem : MonoBehaviour
                         verticalSpeed = 0.0f;
 
                     if (boosting)
+                    {
+                        if (calculateStaminaConsumption)
+                            currentStamina -= staminaDecreaseSpeedWhenBoosting * Time.deltaTime;
+
                         currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
+                    }
                     else if (slowingDown || stop)
+                    {
+                        if (calculateStaminaConsumption)
+                            currentStamina -= staminaDecreaseSpeedWhenBoosting * Time.deltaTime;
+
                         currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
+                    }
                     else
                     {
+                        if (calculateStaminaConsumption)
+                            currentStamina -= staminaDecreaseSpeed * Time.deltaTime;
+
                         idealFlyingSpeed = normalFlyingSpeed + verticalSpeed;
 
                         if (currentFlyingSpeed < idealFlyingSpeed)
@@ -243,12 +292,14 @@ public class CreatureFlyingSystem : MonoBehaviour
                         else
                             currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, idealFlyingSpeed, maximumFlyingSpeed);
                     }
-                    
+
+                    currentFlyingSpeed *= staminaFactor * carryingWeightFactor;
+
                     flyingVelocity = meshTransform.forward * currentFlyingSpeed;
 
                     targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime;
                 }
-                
+
                 rootTransform.position = targetCharacterPosition;
             }
         }
