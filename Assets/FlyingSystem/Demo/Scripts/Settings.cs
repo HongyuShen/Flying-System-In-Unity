@@ -6,6 +6,7 @@ public class Settings : MonoBehaviour
 
     void Update()
     {
+        //print(Input.mousePosition);
         if (!enabledControl && Input.GetMouseButtonUp(0))
         {
             LockMouse();

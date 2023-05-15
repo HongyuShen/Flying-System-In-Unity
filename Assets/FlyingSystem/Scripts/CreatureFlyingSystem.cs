@@ -54,7 +54,7 @@ public class CreatureFlyingSystem : MonoBehaviour
     public Vector3 flyingDirection;
 
     [HideInInspector]
-    private float currentFlyingSpeed;
+    public float currentFlyingSpeed;
 
     [HideInInspector]
     public Vector3 flyingVelocity;
@@ -64,7 +64,7 @@ public class CreatureFlyingSystem : MonoBehaviour
     [HideInInspector]
     public bool boosting = false;
     [HideInInspector]
-    public bool slowingDown = false, stop = false;
+    public bool slowingDown = false, fullStop = false;
 
     private Vector3 targetCharacterPosition;
 
@@ -116,6 +116,11 @@ public class CreatureFlyingSystem : MonoBehaviour
         thirdPersonViewMode = true;
     }
 
+    public Quaternion GetRotation()
+    {
+        return meshTransform.rotation;
+    }
+
     public void TakeOff()
     {
         inAir = true;
@@ -135,7 +140,7 @@ public class CreatureFlyingSystem : MonoBehaviour
     {
         flyingInNormalSpeed = true;
         slowingDown = false;
-        stop = false;
+        fullStop = false;
     }
 
     public void SlowDown()
@@ -143,18 +148,22 @@ public class CreatureFlyingSystem : MonoBehaviour
         boosting = false;
         flyingInNormalSpeed = false;
         slowingDown = true;
-        stop = false;
+        fullStop = false;
     }
 
-    public void FullStop()
+    public void StopSlowingDown() {
+        slowingDown = false;
+    }
+
+    public void FullStopInAir()
     {
         boosting = false;
         flyingInNormalSpeed = false;
         slowingDown = false;
-        stop = true;
+        fullStop = true;
     }
 
-    public void AddHorizontalMovement(float value)
+    public void AddYawInput(float value)
     {
         if (Mathf.Abs(value) > 0.025f)
         {
@@ -232,7 +241,7 @@ public class CreatureFlyingSystem : MonoBehaviour
 
                     if (boosting)
                         currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
-                    else if (slowingDown || stop)
+                    else if (slowingDown || fullStop)
                     {
                         currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
                         verticalAcceleration = slowDownAcceleration - g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
@@ -273,7 +282,7 @@ public class CreatureFlyingSystem : MonoBehaviour
 
                         currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
                     }
-                    else if (slowingDown || stop)
+                    else if (slowingDown || fullStop)
                     {
                         if (calculateStaminaConsumption)
                             currentStamina -= staminaDecreaseSpeedWhenBoosting * Time.deltaTime;
