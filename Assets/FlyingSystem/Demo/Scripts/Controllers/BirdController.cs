@@ -16,8 +16,6 @@ public class BirdController : MonoBehaviour
 
     public bool activated = false;
 
-    public bool mobileInputControl = false;
-
     private bool thirdPersonViewMode = true;
 
     public float cameraSpeed = 300.0f;
@@ -26,8 +24,6 @@ public class BirdController : MonoBehaviour
     public float springArmSmoothingFactor = 0.25f;
 
     public float groundMovementSpeed = 1.0f;
-
-    private bool mobileUIVisible = false;
 
     void Start()
     {
@@ -46,7 +42,7 @@ public class BirdController : MonoBehaviour
         {
             CameraControlLogic();
 
-            if (!mobileInputControl)
+            if (!Settings.mobileInputControl)
                 PCInputControlLogic();
             else
                 MobileInputControlLogic();

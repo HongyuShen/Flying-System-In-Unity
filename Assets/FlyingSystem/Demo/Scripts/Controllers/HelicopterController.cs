@@ -1,19 +1,14 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class HelicopterController : MonoBehaviour
 {
-    private Transform characterTransform;
-
     public Transform springArmTransform;
     public Transform cameraTransform;
-
-    public Transform rollRootTransform;
 
     private AirTransportationFlyingSystem airTransportationFlyingSystem;
 
     public bool activated = false;
-
-    public bool mobileInputControl = false;
 
     public float cameraSpeed = 300.0f;
 
@@ -26,12 +21,12 @@ public class HelicopterController : MonoBehaviour
 
     private float accumulatedDeltaMousePositionX, accumulatedDeltaMousePositionY;
 
-    private bool mobileUIVisible = false;
+    [Header("Mobile")]
+    public Joystick joystick;
+    public Button ascendButton, descendButton;
 
     void Start()
     {
-        characterTransform = this.transform;
-
         airTransportationFlyingSystem = this.GetComponent<AirTransportationFlyingSystem>();
     }
 
@@ -39,23 +34,17 @@ public class HelicopterController : MonoBehaviour
     {
         if (Settings.enabledControl && activated)
         {
-            if (!draggingMouse)
-                CameraControlLogic();
+            if (!Settings.mobileInputControl)
+            {
+                if (!draggingMouse)
+                    CameraControlLogic();
 
-            if (!mobileInputControl)
                 PCInputControlLogic();
+            }
             else
+            {
                 MobileInputControlLogic();
-
-            //if (Input.GetKeyUp(KeyCode.M))
-            //{
-            //    mobileUIVisible = !mobileUIVisible;
-
-            //    if(mobileUIVisible)
-
-            //    else
-
-            //}
+            }
         }
     }
 
@@ -82,8 +71,8 @@ public class HelicopterController : MonoBehaviour
 
         if (draggingMouse)
         {
-            accumulatedDeltaMousePositionX += Input.GetAxis("Mouse X");
-            accumulatedDeltaMousePositionY += Input.GetAxis("Mouse Y");
+            accumulatedDeltaMousePositionX += Mathf.Clamp(Input.GetAxis("Mouse X"), -1.0f, 1.0f);
+            accumulatedDeltaMousePositionY += Mathf.Clamp(Input.GetAxis("Mouse Y"), -1.0f, 1.0f);
 
             airTransportationFlyingSystem.AddHelicopterYawInput(new Vector2(accumulatedDeltaMousePositionX, accumulatedDeltaMousePositionY));
         }
@@ -99,12 +88,54 @@ public class HelicopterController : MonoBehaviour
 
     void MobileInputControlLogic()
     {
+        if (joystick.isMoving)
+        {
+            draggingMouse = true;
+            accumulatedDeltaMousePositionX += joystick.inputAxisX;
+            accumulatedDeltaMousePositionY += joystick.inputAxisY;
 
+            airTransportationFlyingSystem.AddHelicopterYawInput(new Vector2(accumulatedDeltaMousePositionX, accumulatedDeltaMousePositionY));
+        }
+        else
+        {
+            if (draggingMouse)
+            {
+                draggingMouse = false;
+                accumulatedDeltaMousePositionX = 0.0f;
+                accumulatedDeltaMousePositionY = 0.0f;
+                airTransportationFlyingSystem.StopYawInput();
+            }
+        }
     }
 
     void CameraControlLogic()
     {
         // Camera view follows the roll
         springArmTransform.rotation = Quaternion.Euler(springArmTransform.rotation.eulerAngles.x - Input.GetAxis("Mouse Y") * cameraSpeed * Time.deltaTime, springArmTransform.rotation.eulerAngles.y + Input.GetAxis("Mouse X") * cameraSpeed * Time.deltaTime, 0.0f);
+    }
+
+    public void MobileTurnLeft()
+    {
+        airTransportationFlyingSystem.AddYawInput(-1.0f);
+    }
+
+    public void MobileTurnRight()
+    {
+        airTransportationFlyingSystem.AddYawInput(1.0f);
+    }
+
+    public void MobileAscend()
+    {
+        airTransportationFlyingSystem.AddPitchInput(1.0f);
+    }
+
+    public void MobileDescend()
+    {
+        airTransportationFlyingSystem.AddPitchInput(-1.0f);
+    }
+
+    public void MobileStopAscendOrDescend()
+    {
+        airTransportationFlyingSystem.VerticalSlowDown();
     }
 }

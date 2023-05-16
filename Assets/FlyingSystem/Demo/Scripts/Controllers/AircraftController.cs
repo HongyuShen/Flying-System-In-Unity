@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class AircraftController : MonoBehaviour
 {
-    private Transform characterTransform;
-
     public Transform springArmTransform;
     public Transform cameraTransform;
 
@@ -13,8 +11,6 @@ public class AircraftController : MonoBehaviour
 
     public bool activated = false;
 
-    public bool mobileInputControl = false;
-
     public float cameraSpeed = 300.0f;
 
     [Range(0.0f, 100.0f)]
@@ -22,12 +18,8 @@ public class AircraftController : MonoBehaviour
 
     public float groundMovementSpeed = 100.0f;
 
-    private bool mobileUIVisible = false;
-
     void Start()
     {
-        characterTransform = this.transform;
-
         airTransportationFlyingSystem = this.GetComponent<AirTransportationFlyingSystem>();
     }
 
@@ -37,20 +29,11 @@ public class AircraftController : MonoBehaviour
         {
             CameraControlLogic();
 
-            if (!mobileInputControl)
+            if (!Settings.mobileInputControl)
                 PCInputControlLogic();
             else
                 MobileInputControlLogic();
 
-            //if (Input.GetKeyUp(KeyCode.M))
-            //{
-            //    mobileUIVisible = !mobileUIVisible;
-
-            //    if(mobileUIVisible)
-
-            //    else
-
-            //}
         }
     }
 
