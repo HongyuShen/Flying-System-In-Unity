@@ -11,6 +11,7 @@ public class CreatureFlyingSystem : MonoBehaviour
     public float cameraLookAtOffsetY = 0.5f;
 
     [Header("Creature Attributes")]
+    public float minimumTakeOffSpeed = 0.0f;
     public float normalFlyingSpeed = 10.0f;
     public float maximumFlyingSpeed = 15.0f;
     public float boostAcceleration = 12.0f;
@@ -26,7 +27,6 @@ public class CreatureFlyingSystem : MonoBehaviour
     public bool canDive = true;
     [Range(0.0f, 90.0f)]
     public float divingStartAngle = 30.0f;
-    public bool canFlyInAnyDirection = false;
 
     [Header("Custom Attributes")]
     public float g = 9.8f;
@@ -41,9 +41,6 @@ public class CreatureFlyingSystem : MonoBehaviour
     public AnimationCurve speedCarryingWeightRatioAnimationCurve;
 
     // Flying attributes
-    [HideInInspector]
-    public bool thirdPersonViewMode = true;
-
     [HideInInspector]
     public bool enabledFlyingLogic = true;
 
@@ -106,16 +103,6 @@ public class CreatureFlyingSystem : MonoBehaviour
             Fly();
     }
 
-    public void SwitchToFirstPersonViewMode()
-    {
-        thirdPersonViewMode = false;
-    }
-
-    public void SwitchToThirdPersonViewMode()
-    {
-        thirdPersonViewMode = true;
-    }
-
     public Quaternion GetRotation()
     {
         return meshTransform.rotation;
@@ -151,7 +138,8 @@ public class CreatureFlyingSystem : MonoBehaviour
         fullStop = false;
     }
 
-    public void StopSlowingDown() {
+    public void StopSlowingDown()
+    {
         slowingDown = false;
     }
 
@@ -193,7 +181,7 @@ public class CreatureFlyingSystem : MonoBehaviour
         }
     }
 
-    public void Fly()
+    void Fly()
     {
         if (enabledFlyingLogic)
         {

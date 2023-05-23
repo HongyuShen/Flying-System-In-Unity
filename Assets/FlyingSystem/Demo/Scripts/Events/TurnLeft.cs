@@ -3,19 +3,19 @@ using UnityEngine.EventSystems;
 
 public class TurnLeft : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    private HelicopterController helicopterController;
+    private Manager manager;
 
     private bool buttonDown = false;
 
     void Start()
     {
-        helicopterController = GameObject.Find("Helicopter").GetComponent<HelicopterController>();
+        manager = GameObject.Find("Scripts").GetComponent<Manager>();
     }
 
     void Update()
     {
         if (buttonDown)
-            helicopterController.MobileTurnLeft();
+            manager.MobileTurnLeft();
     }
 
     public void OnPointerDown(PointerEventData eventData)
