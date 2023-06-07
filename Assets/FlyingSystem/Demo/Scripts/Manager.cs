@@ -1,7 +1,5 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.Networking.UnityWebRequest;
 
 public class Manager : MonoBehaviour
 {
@@ -23,16 +21,23 @@ public class Manager : MonoBehaviour
     public int possessedControllerId = 0;
 
     [Header("Creatures")]
+    public BirdController duckBirdController;
     public EagleController eagleController;
+    public BirdController dragonBirdController;
 
     [Header("Controllers")]
     public ThirdPersonCharacter thirdPersonCharacterController;
+
     public AircraftController airlinerAircraftController;
     public AircraftController jetAircraftController;
     public HelicopterController helicopterController;
     public DroneController droneController;
     public FlyingCarController flyingCarController;
     public HumanoidAircraftController humanoidAircraftController;
+    public GliderController parachuteGliderController;
+    public GliderController gliderController;
+    public ViteAereaController viteAereaController;
+    public GliderController paperAirPlaneGliderController;
 
     private bool enabledControl = false;
 
@@ -104,6 +109,11 @@ public class Manager : MonoBehaviour
         {
             thirdPersonCharacterController.Deactivate();
 
+            if (possessedControllerId == 4) 
+                airlinerAircraftController.transform.position = new Vector3(141.0f, 2.5f, 507.0f);
+            else if (possessedControllerId == 5)
+                jetAircraftController.transform.position = new Vector3(141.0f, 2.5f, 507.0f);
+
             enabledCinemachine = true;
         }
     }
@@ -112,7 +122,22 @@ public class Manager : MonoBehaviour
     {
         if (enabledCinemachine)
         {
-            if (possessedControllerId == 4)
+            if (possessedControllerId == 1)
+            {
+                if (CinemachineLerp(duckBirdController.characterCamera.transform.position, duckBirdController.characterCamera.transform.rotation))
+                    duckBirdController.Activate();
+            }
+            else if (possessedControllerId == 2)
+            {
+                if (CinemachineLerp(eagleController.characterCamera.transform.position, eagleController.characterCamera.transform.rotation))
+                    eagleController.Activate();
+            }
+            else if (possessedControllerId == 3)
+            {
+                if (CinemachineLerp(dragonBirdController.characterCamera.transform.position, dragonBirdController.characterCamera.transform.rotation))
+                    dragonBirdController.Activate();
+            }
+            else if (possessedControllerId == 4)
             {
                 if (CinemachineLerp(airlinerAircraftController.characterCamera.transform.position, airlinerAircraftController.characterCamera.transform.rotation))
                     airlinerAircraftController.Activate();
@@ -142,6 +167,26 @@ public class Manager : MonoBehaviour
                 if (CinemachineLerp(humanoidAircraftController.characterCamera.transform.position, humanoidAircraftController.characterCamera.transform.rotation))
                     humanoidAircraftController.Activate();
             }
+            else if (possessedControllerId == 10)
+            {
+                if (CinemachineLerp(parachuteGliderController.characterCamera.transform.position, parachuteGliderController.characterCamera.transform.rotation))
+                    parachuteGliderController.Activate();
+            }
+            else if (possessedControllerId == 11)
+            {
+                if (CinemachineLerp(gliderController.characterCamera.transform.position, gliderController.characterCamera.transform.rotation))
+                    gliderController.Activate();
+            }
+            else if (possessedControllerId == 12)
+            {
+                if (CinemachineLerp(viteAereaController.characterCamera.transform.position, viteAereaController.characterCamera.transform.rotation))
+                    viteAereaController.Activate();
+            }
+            else if (possessedControllerId == 13)
+            {
+                if (CinemachineLerp(paperAirPlaneGliderController.characterCamera.transform.position, paperAirPlaneGliderController.characterCamera.transform.rotation))
+                    paperAirPlaneGliderController.Activate();
+            }
         }
     }
 
@@ -168,7 +213,28 @@ public class Manager : MonoBehaviour
     {
         if (!resetCameraLogic)
         {
-            if (possessedControllerId == 4)
+            if (possessedControllerId == 1)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = duckBirdController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = duckBirdController.characterCamera.transform.rotation;
+
+                duckBirdController.Deactivate();
+            }
+            else if (possessedControllerId == 2)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = eagleController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = eagleController.characterCamera.transform.rotation;
+
+                eagleController.Deactivate();
+            }
+            else if (possessedControllerId == 3)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = dragonBirdController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = dragonBirdController.characterCamera.transform.rotation;
+
+                dragonBirdController.Deactivate();
+            }
+            else if (possessedControllerId == 4)
             {
                 thirdPersonCharacterController.characterCameraTransform.position = airlinerAircraftController.characterCamera.transform.position;
                 thirdPersonCharacterController.characterCameraTransform.rotation = airlinerAircraftController.characterCamera.transform.rotation;
@@ -210,6 +276,34 @@ public class Manager : MonoBehaviour
 
                 humanoidAircraftController.Deactivate();
             }
+            else if (possessedControllerId == 10)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = parachuteGliderController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = parachuteGliderController.characterCamera.transform.rotation;
+
+                parachuteGliderController.Deactivate();
+            }
+            else if (possessedControllerId == 11)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = gliderController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = gliderController.characterCamera.transform.rotation;
+
+                gliderController.Deactivate();
+            }
+            else if (possessedControllerId == 12)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = viteAereaController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = viteAereaController.characterCamera.transform.rotation;
+
+                viteAereaController.Deactivate();
+            }
+            else if (possessedControllerId == 13)
+            {
+                thirdPersonCharacterController.characterCameraTransform.position = paperAirPlaneGliderController.characterCamera.transform.position;
+                thirdPersonCharacterController.characterCameraTransform.rotation = paperAirPlaneGliderController.characterCamera.transform.rotation;
+
+                paperAirPlaneGliderController.Deactivate();
+            }
 
             thirdPersonCharacterController.Activate();
 
@@ -232,14 +326,14 @@ public class Manager : MonoBehaviour
 
     bool ResetCameraLerp()
     {
-        thirdPersonCharacterController.characterCameraTransform.localPosition = Vector3.Lerp(thirdPersonCharacterController.characterCameraTransform.localPosition, new Vector3(0.0f, 1.5f, -5.0f), 4.0f * Time.deltaTime);
+        thirdPersonCharacterController.characterCameraTransform.localPosition = Vector3.Lerp(thirdPersonCharacterController.characterCameraTransform.localPosition, new Vector3(0.0f, 3.0f, -10.0f), 4.0f * Time.deltaTime);
         thirdPersonCharacterController.characterCameraTransform.localRotation = Quaternion.Lerp(thirdPersonCharacterController.characterCameraTransform.localRotation, Quaternion.Euler(0.0f, 0.0f, 0.0f), 4.0f * Time.deltaTime);
 
-        if (Vector3.Distance(thirdPersonCharacterController.characterCameraTransform.localPosition, new Vector3(0.0f, 1.5f, -5.0f)) < 0.01f)
+        if (Vector3.Distance(thirdPersonCharacterController.characterCameraTransform.localPosition, new Vector3(0.0f, 3.0f, -10.0f)) < 0.01f)
         {
             resetCameraLogic = false;
 
-            thirdPersonCharacterController.characterCameraTransform.localPosition = new Vector3(0.0f, 1.5f, -5.0f);
+            thirdPersonCharacterController.characterCameraTransform.localPosition = new Vector3(0.0f, 3.0f, -10.0f);
             thirdPersonCharacterController.characterCameraTransform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
 
             return true;

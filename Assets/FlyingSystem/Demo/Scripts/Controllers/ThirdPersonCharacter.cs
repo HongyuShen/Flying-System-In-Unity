@@ -15,7 +15,7 @@ public class ThirdPersonCharacter : MonoBehaviour
     private Vector3 targetCharacterPosition;
 
     public float cameraSpeed = 350.0f;
-    public float characterMovementSpeed = 15.0f;
+    public float characterMovementSpeed = 75.0f;
 
     private bool arrowKeyDown = false;
 

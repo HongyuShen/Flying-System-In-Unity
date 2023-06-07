@@ -10,7 +10,7 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
     public Transform cameraTransform;
 
     public Transform rollRootTransform;
-    public Transform meshTransform;
+    public Transform meshRootTransform;
 
     [Header("Camera Attributes")]
     public float cameraLookAtOffsetY = 0.5f;
@@ -25,6 +25,7 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
     public float slowDownAcceleration = 10.0f;
     [Range(0.0f, 10.0f)]
     public float airDrag = 2.5f;
+    public bool hoverMode = false;
 
     [Header("Turning Attributes")]
     [Range(0.0f, 100.0f)]
@@ -65,10 +66,7 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
     public bool enabledFlyingLogic = true;
 
     [HideInInspector]
-    public bool inAir = false;
-
-    [HideInInspector]
-    public bool hoverMode = false;
+    public bool inAir = false; 
 
     [HideInInspector]
     public Vector3 flyingDirection;
@@ -91,11 +89,6 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
     // Turning variables
     private float targetMeshLocalRotationX, targetMeshLocalRotationY, targetMeshLocalRotationZ;
 
-    void Start()
-    {
-        
-    }
-
     void Update()
     {
         if (enabledFlyingLogic)
@@ -104,7 +97,7 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
 
     public Quaternion GetMeshRotation()
     {
-        return meshTransform.rotation;
+        return meshRootTransform.rotation;
     }
 
     public void TurnOn()
@@ -123,7 +116,7 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
 
     public void SlowDown()
     {
-        
+
     }
 
     public void StopSlowingDown()
@@ -169,44 +162,33 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
                 flyingDirection = flyingDirection.normalized;
 
                 if (flyingDirection.x > 0.0f)
-                    targetMeshLocalRotationZ = -maximumMeshRollAngle;
+                    targetMeshLocalRotationZ = -maximumMeshRollAngle * flyingDirection.x;
                 else
-                    targetMeshLocalRotationZ = maximumMeshRollAngle;
-
-                targetMeshLocalRotationZ *= Mathf.Abs(flyingDirection.x);
+                    targetMeshLocalRotationZ = maximumMeshRollAngle * -flyingDirection.x;
 
                 if (!freezeMeshRotationX)
                 {
-                    if (DeltaAngle(springArmTransform.rotation.eulerAngles.y, meshTransform.rotation.eulerAngles.y) < 90.0f)
-                    {
-                        if (flyingDirection.y > 0.0f)
-                            targetMeshLocalRotationX = maximumMeshPitchAngle;
-                        else
-                            targetMeshLocalRotationX = -maximumMeshPitchAngle;
-                    }
+                    if (DeltaAngle(springArmTransform.rotation.eulerAngles.y, meshRootTransform.rotation.eulerAngles.y) < 90.0f)
+                        targetMeshLocalRotationX = maximumMeshPitchAngle * flyingDirection.y;
                     else
-                    {
-                        if (flyingDirection.y > 0.0f)
-                            targetMeshLocalRotationX = -maximumMeshPitchAngle;
-                        else
-                            targetMeshLocalRotationX = maximumMeshPitchAngle;
-                    }
-
-                    targetMeshLocalRotationX *= Mathf.Abs(flyingDirection.y);
+                        targetMeshLocalRotationX = maximumMeshPitchAngle * -flyingDirection.y;
                 }
                 else
-                {
                     targetMeshLocalRotationX = 0.0f;
-                }
 
                 targetMeshLocalRotationY = springArmTransform.rotation.eulerAngles.y;
 
                 rollRootTransform.localRotation = Quaternion.Lerp(rollRootTransform.localRotation, Quaternion.Euler(0.0f, targetMeshLocalRotationY, rollRootTransform.localRotation.eulerAngles.z), meshYawTurningSmoothingFactor * Time.deltaTime);
                 rollRootTransform.localRotation = Quaternion.Lerp(rollRootTransform.localRotation, Quaternion.Euler(0.0f, rollRootTransform.localRotation.eulerAngles.y, targetMeshLocalRotationZ), meshRollTurningSmoothingFactor * Time.deltaTime);
-                meshTransform.localRotation = Quaternion.Lerp(meshTransform.localRotation, Quaternion.Euler(targetMeshLocalRotationX, 0.0f, 0.0f), meshPitchTurningSmoothingFactor * Time.deltaTime);
+                meshRootTransform.localRotation = Quaternion.Lerp(meshRootTransform.localRotation, Quaternion.Euler(targetMeshLocalRotationX, 0.0f, 0.0f), meshPitchTurningSmoothingFactor * Time.deltaTime);
 
                 // Position
                 springArmLocalReferenceTransform.localPosition = new Vector3(flyingDirection.x, 0.0f, flyingDirection.y) * 10000.0f;
+
+                if (boosting)
+                    currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
+                else
+                    currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, normalFlyingSpeed);
 
                 flyingDirection = (springArmLocalReferenceTransform.position - rootTransform.position);
 
@@ -215,14 +197,16 @@ public class HumanoidAircraftFlyingSystem : MonoBehaviour
 
                 flyingDirection = flyingDirection.normalized;
 
-                rootTransform.position += flyingDirection * normalFlyingSpeed * Time.deltaTime;
+                flyingVelocity = flyingDirection * currentFlyingSpeed;
+
+                rootTransform.position += flyingVelocity * Time.deltaTime;
 
                 flyingDirection = Vector3.zero;
             }
             else
             {
                 rollRootTransform.localRotation = Quaternion.Lerp(rollRootTransform.localRotation, Quaternion.Euler(0.0f, rollRootTransform.localRotation.eulerAngles.y, 0.0f), meshRollTurningRecoverySmoothingFactor * Time.deltaTime);
-                meshTransform.localRotation = Quaternion.Lerp(meshTransform.localRotation, Quaternion.Euler(0.0f, 0.0f, 0.0f), meshPitchTurningRecoverySmoothingFactor * Time.deltaTime);
+                meshRootTransform.localRotation = Quaternion.Lerp(meshRootTransform.localRotation, Quaternion.Euler(0.0f, 0.0f, 0.0f), meshPitchTurningRecoverySmoothingFactor * Time.deltaTime);
             }
         }
     }

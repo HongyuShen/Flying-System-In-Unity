@@ -120,8 +120,6 @@ MonoBehaviour:
   cameraSpeed: 300
   mobileInputControl: 0
   mobileCameraSpeed: 300
-  canMoveOnGround: 0
-  groundMovementSpeed: 100
   joystick: {fileID: 0}
 --- !u!114 &7184806143422282326
 MonoBehaviour:
@@ -139,7 +137,7 @@ MonoBehaviour:
   springArmTransform: {fileID: 3735855755127612496}
   springArmLocalReferenceTransform: {fileID: 3735855755323322185}
   rollRootTransform: {fileID: 3735855756958206942}
-  meshTransform: {fileID: 3735855756096403208}
+  meshRootTransform: {fileID: 3735855756096403208}
   normalFlyingSpeed: 20
   maximumFlyingSpeed: 35
   boostAcceleration: 12
@@ -260,7 +258,6 @@ MonoBehaviour:
   inAir: 0
   flyingDirection: {x: 0, y: 0, z: 0}
   currentFlyingSpeed: 0
-  flyingVelocity: {x: 0, y: 0, z: 0}
   flyingInNormalSpeed: 0
   boosting: 0
   slowingDown: 0
@@ -390,7 +387,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3735855756096403208}
   m_Layer: 0
-  m_Name: Mesh
+  m_Name: MeshRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class AircraftController : MonoBehaviour
 {
+    public Transform rootTransform;
     public Transform springArmTransform;
     public Camera characterCamera;
 
@@ -20,9 +21,20 @@ public class AircraftController : MonoBehaviour
     public float mobileCameraSpeed = 300.0f;
     private float screenCenterX;
 
+    [Header("General Attributes")]
     public bool takeOff;
+    public bool landed = true;
+    public float maximumGroundMovementSpeed = 80.0f;
+    public float groundAcceleration = 20.0f;
+    public float groundTurningSpeed = 10.0f;
+    public float slowDownAccelerationAfterLanding = 10.0f;
+
+    [HideInInspector]
+    public float currentGroundMovementSpeed;
 
     private float targetSpringArmRotationX, targetSpringArmRotationY;
+
+    private bool movingForward = false;
 
     void Start()
     {
@@ -48,6 +60,8 @@ public class AircraftController : MonoBehaviour
                 MobileCameraControlLogic();
                 MobileInputControlLogic();
             }
+
+            MovementLogic();
         }
     }
 
@@ -117,14 +131,17 @@ public class AircraftController : MonoBehaviour
         if (!aircraftFlyingSystem.inAir)
         {
             if (Input.GetKey(KeyCode.W))
-                aircraftFlyingSystem.GoundMoveForward(1.0f);
+                GoundMoveForward(1.0f);
             else if (Input.GetKey(KeyCode.S))
-                aircraftFlyingSystem.GoundMoveForward(-1.0f);
+                GoundMoveForward(-1.0f);
+
+            if (Input.GetKeyUp(KeyCode.W))
+                StopMovingForward();
 
             if (Input.GetKey(KeyCode.A))
-                aircraftFlyingSystem.GoundTurnRight(-1.0f);
+                GoundTurnRight(-1.0f);
             else if (Input.GetKey(KeyCode.D))
-                aircraftFlyingSystem.GoundTurnRight(1.0f);
+                GoundTurnRight(1.0f);
         }
         else
         {
@@ -165,20 +182,71 @@ public class AircraftController : MonoBehaviour
 
     }
 
+    public void GoundMoveForward(float value)
+    {
+        movingForward = true;
+
+        if (!(currentGroundMovementSpeed > maximumGroundMovementSpeed))
+        {
+            currentGroundMovementSpeed = Mathf.Clamp(currentGroundMovementSpeed + groundAcceleration * Time.deltaTime, 0.0f, maximumGroundMovementSpeed);
+            rootTransform.position += rootTransform.forward * value * currentGroundMovementSpeed * Time.deltaTime;
+        }
+    }
+
+    public void StopMovingForward()
+    {
+        movingForward = false;
+    }
+
+    public void GoundTurnRight(float value)
+    {
+        rootTransform.Rotate(rootTransform.up * value * groundTurningSpeed * Time.deltaTime);
+    }
+
     public void TakeOffOrLand()
     {
         if (!aircraftFlyingSystem.inAir)
         {
-            if (aircraftFlyingSystem.TakeOff())
+            if (aircraftFlyingSystem.TakeOff(currentGroundMovementSpeed))
+            {
+                rootRigidbody.isKinematic = true;
                 rootRigidbody.useGravity = false;
+                
+                landed = false;
+            }
         }
         else
         {
             aircraftFlyingSystem.Land();
+
+            rootRigidbody.isKinematic = false;
             rootRigidbody.useGravity = true;
+
+            movingForward = false;
+            landed = true;
         }
 
         takeOff = aircraftFlyingSystem.inAir;
+    }
+
+    void MovementLogic()
+    {
+        if (landed)
+        {
+            if (!movingForward)
+            {
+                currentGroundMovementSpeed = Mathf.Clamp(currentGroundMovementSpeed - slowDownAccelerationAfterLanding * Time.deltaTime, 0.0f, currentGroundMovementSpeed);
+                rootTransform.position += rootTransform.forward * currentGroundMovementSpeed * Time.deltaTime;
+            }
+            else
+            {
+                if (currentGroundMovementSpeed > maximumGroundMovementSpeed)
+                {
+                    currentGroundMovementSpeed -= slowDownAccelerationAfterLanding * Time.deltaTime;
+                    rootTransform.position += rootTransform.forward * currentGroundMovementSpeed * Time.deltaTime;
+                }
+            }
+        }
     }
 
     public void MobileTurnLeft()

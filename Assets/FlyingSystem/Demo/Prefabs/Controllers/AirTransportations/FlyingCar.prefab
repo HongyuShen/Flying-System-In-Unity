@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1630819829205815647}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4.5, z: -11}
+  m_LocalPosition: {x: 0, y: 4.5, z: -13}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1630819830240614883}
@@ -115,7 +115,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1630819830240614883}
-  - {fileID: 1630819830047297401}
+  - {fileID: 7573199031546720971}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -133,7 +133,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 126
   m_CollisionDetection: 0
 --- !u!65 &1630819829939198818
 BoxCollider:
@@ -146,8 +146,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 5, y: 1, z: 2}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 8.25, y: 2.5, z: 5.5}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &1630819829939198823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -183,11 +183,29 @@ MonoBehaviour:
   rootTransform: {fileID: 1630819829939198819}
   springArmTransform: {fileID: 1630819830240614883}
   cameraTransform: {fileID: 1630819829205815646}
-  meshTransform: {fileID: 1630819830047297401}
+  rollRootTransform: {fileID: 7573199031546720971}
+  meshRootTransform: {fileID: 1630819830047297401}
+  forwardSpeed: 20
+  maximumforwardSpeed: 35
+  boostAcceleration: 5
+  slowDownAcceleration: 6
+  backwardSpeed: 10
+  airDrag: 2.5
+  hoverMode: 0
+  remainPitchZeroWhenHovering: 1
+  meshYawTurningSpeed: 20
+  meshYawTurningSmoothingFactor: 2
+  meshYawTurningRecoverySmoothingFactor: 0.25
+  meshPitchTurningSpeed: 20
+  meshPitchTurningSmoothingFactor: 2
+  meshPitchTurningRecoverySmoothingFactor: 0.25
+  maximumMeshRollAngle: 30
+  meshRollTurningSmoothingFactor: 2
+  meshRollTurningRecoverySmoothingFactor: 0.5
+  meshTurningRecoveryDelay: 0.5
   isTurnedOff: 0
   enabledFlyingLogic: 1
   inAir: 0
-  hoverMode: 0
   flyingDirection: {x: 0, y: 0, z: 0}
   currentFlyingSpeed: 0
   flyingVelocity: {x: 0, y: 0, z: 0}
@@ -204,7 +222,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1630819830047297401}
   m_Layer: 0
-  m_Name: Mesh
+  m_Name: MeshRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -217,13 +235,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1630819830047297398}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 3244937125468026307}
-  m_Father: {fileID: 1630819829939198819}
-  m_RootOrder: 1
+  m_Father: {fileID: 7573199031546720971}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1630819830240614880
 GameObject:
@@ -255,6 +273,37 @@ Transform:
   - {fileID: 1630819829205815646}
   m_Father: {fileID: 1630819829939198819}
   m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7718307303492710632
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7573199031546720971}
+  m_Layer: 0
+  m_Name: RollRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7573199031546720971
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7718307303492710632}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1630819830047297401}
+  m_Father: {fileID: 1630819829939198819}
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &3063270606364660264
 PrefabInstance:

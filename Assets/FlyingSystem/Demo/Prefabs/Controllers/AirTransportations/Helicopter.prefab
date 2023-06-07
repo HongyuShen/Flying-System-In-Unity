@@ -186,7 +186,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8190137152481173812}
   m_Layer: 0
-  m_Name: Mesh
+  m_Name: MeshRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -314,13 +314,13 @@ MonoBehaviour:
   springArmTransform: {fileID: 8190137152339474866}
   springArmLocalReferenceTransform: {fileID: 8190137151443530138}
   rollRootTransform: {fileID: 8190137151354826114}
-  meshTransform: {fileID: 8190137152481173812}
-  normalFlyingSpeed: 20
-  maximumFlyingSpeed: 35
+  meshRootTransform: {fileID: 8190137152481173812}
+  normalFlyingSpeed: 60
+  maximumFlyingSpeed: 100
   boostAcceleration: 12
   slowDownAcceleration: 10
   airDrag: 2.5
-  meshYawTurningSpeed: 45
+  meshYawTurningSpeed: 60
   meshYawTurningSmoothingFactor: 2
   maximumMeshPitchAngle: 25
   meshPitchTurningSmoothingFactor: 2
@@ -435,7 +435,6 @@ MonoBehaviour:
   inAir: 0
   flyingDirection: {x: 0, y: 0, z: 0}
   currentFlyingSpeed: 0
-  flyingVelocity: {x: 0, y: 0, z: 0}
   flyingInNormalSpeed: 0
   boosting: 0
   slowingDown: 0

@@ -58,8 +58,8 @@ public class HelicopterController : MonoBehaviour
                 MobileInputControlLogic();
             }
 
-            topRotorTransform.Rotate(Vector3.forward * 1080.0f * Time.deltaTime);
-            tailRotorTransform.Rotate(Vector3.forward * 1080.0f * Time.deltaTime);
+            topRotorTransform.Rotate(Vector3.forward * 1280.0f * Time.deltaTime);
+            tailRotorTransform.Rotate(Vector3.forward * 1280.0f * Time.deltaTime);
         }
     }
 
@@ -79,7 +79,6 @@ public class HelicopterController : MonoBehaviour
 
     void PCCameraControlLogic()
     {
-        // Camera view follows the roll
         springArmTransform.rotation = Quaternion.Euler(springArmTransform.rotation.eulerAngles.x - Input.GetAxis("Mouse Y") * cameraSpeed * Time.deltaTime, springArmTransform.rotation.eulerAngles.y + Input.GetAxis("Mouse X") * cameraSpeed * Time.deltaTime, 0.0f);
     }
 

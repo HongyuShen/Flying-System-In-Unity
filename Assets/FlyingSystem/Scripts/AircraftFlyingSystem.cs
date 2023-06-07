@@ -4,18 +4,13 @@ public class AircraftFlyingSystem : MonoBehaviour
 {
     [Header("Object References")]
     public Transform rootTransform;
-    public Transform springArmTransform;
     public Transform rollRootTransform;
-    public Transform meshTransform;
+    public Transform meshRootTransform;
 
     [Header("General Attributes")]
-    public bool canMoveOnGround = true;
-    public float maximumGroundMovementSpeed = 100.0f;
-    public float groundAcceleration = 10.0f;
-    public float groundTurningSpeed = 10.0f;
-    public float minimumTakeOffSpeed = 70.0f;
-    public float normalFlyingSpeed = 20.0f;
-    public float maximumFlyingSpeed = 35.0f;
+    public float minimumTakeOffSpeed = 79.5f;
+    public float normalFlyingSpeed = 80.0f;
+    public float maximumFlyingSpeed = 110.0f;
     public float boostAcceleration = 12.0f;
     public float slowDownAcceleration = 10.0f;
     [Range(0.0f, 10.0f)]
@@ -60,39 +55,38 @@ public class AircraftFlyingSystem : MonoBehaviour
     public bool enabledFlyingLogic = true;
 
     [HideInInspector]
-    public float currentGroundMovementSpeed;
-
-    [HideInInspector]
     public bool inAir = false;
 
     [HideInInspector]
     public Vector3 flyingDirection;
 
     [HideInInspector]
-    public float currentFlyingSpeed;
+    public float flyingSpeed;
 
     [HideInInspector]
     public Vector3 flyingVelocity;
 
     [HideInInspector]
     public bool flyingInNormalSpeed = false;
+    
     [HideInInspector]
     public bool boosting = false;
+    
     [HideInInspector]
     public bool slowingDown = false, fullStop = false;
+    
     [HideInInspector]
     public bool verticalSlowingDown = false;
 
-    private Vector3 targetCharacterPosition;
+    private float currentFlyingSpeed;
 
     // Turning variables
     private float targetMeshLocalRotationX, targetMeshLocalRotationY, targetMeshLocalRotationZ;
     private float totalTurningDegree;
 
-    void Start()
-    {
+    private float powerFactor = 1.0f;
 
-    }
+    private float carryingWeightFactor = 1.0f;
 
     void Update()
     {
@@ -100,14 +94,14 @@ public class AircraftFlyingSystem : MonoBehaviour
             Fly();
     }
 
-    public Quaternion GetMeshRotation()
+    public bool TakeOff(float groundMovementSpeed)
     {
-        return meshTransform.rotation;
-    }
+        if (groundMovementSpeed > minimumTakeOffSpeed)
+        {
+            currentFlyingSpeed = normalFlyingSpeed;
 
-    public bool TakeOff()
-    {
-        inAir = true;
+            inAir = true;
+        }
 
         return inAir;
     }
@@ -129,17 +123,6 @@ public class AircraftFlyingSystem : MonoBehaviour
         flyingInNormalSpeed = false;
         slowingDown = false;
         fullStop = false;
-    }
-
-    public void GoundMoveForward(float value)
-    {
-        currentGroundMovementSpeed += Mathf.Clamp(groundAcceleration * Time.deltaTime, 0.0f, maximumGroundMovementSpeed);
-        rootTransform.position += meshTransform.forward * value * currentGroundMovementSpeed * Time.deltaTime;
-    }
-
-    public void GoundTurnRight(float value)
-    {
-        rootTransform.Rotate(rootTransform.up * value * groundTurningSpeed * Time.deltaTime);
     }
 
     public void SlowDown()
@@ -193,13 +176,24 @@ public class AircraftFlyingSystem : MonoBehaviour
             if (inAir)
             {
                 rollRootTransform.localRotation = Quaternion.Lerp(rollRootTransform.localRotation, Quaternion.Euler(0.0f, 0.0f, targetMeshLocalRotationZ), meshRollTurningSmoothingFactor * Time.deltaTime);
-                meshTransform.localRotation = Quaternion.Lerp(meshTransform.localRotation, Quaternion.Euler(targetMeshLocalRotationX, meshTransform.localRotation.eulerAngles.y, meshTransform.localRotation.eulerAngles.z), meshPitchTurningSmoothingFactor * Time.deltaTime);
-                meshTransform.localRotation = Quaternion.Lerp(meshTransform.localRotation, Quaternion.Euler(meshTransform.localRotation.eulerAngles.x, targetMeshLocalRotationY, meshTransform.localRotation.eulerAngles.z), meshYawTurningSmoothingFactor * Time.deltaTime);
+                meshRootTransform.localRotation = Quaternion.Lerp(meshRootTransform.localRotation, Quaternion.Euler(targetMeshLocalRotationX, meshRootTransform.localRotation.eulerAngles.y, meshRootTransform.localRotation.eulerAngles.z), meshPitchTurningSmoothingFactor * Time.deltaTime);
+                meshRootTransform.localRotation = Quaternion.Lerp(meshRootTransform.localRotation, Quaternion.Euler(meshRootTransform.localRotation.eulerAngles.x, targetMeshLocalRotationY, meshRootTransform.localRotation.eulerAngles.z), meshYawTurningSmoothingFactor * Time.deltaTime);
 
-                flyingVelocity = meshTransform.forward * normalFlyingSpeed;
-                targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime;
+                if (calculatePowerConsumption)
+                    powerFactor = speedRemainingPowerRatioAnimationCurve.Evaluate(1.0f - currentPower / maximumPower);
+                else
+                    powerFactor = 1.0f;
 
-                rootTransform.position = targetCharacterPosition;
+                if (calculateCarryingWeight)
+                    carryingWeightFactor = speedCarryingWeightRatioAnimationCurve.Evaluate(currentCarryingWeight / maximumCarryingWeight);
+                else
+                    carryingWeightFactor = 1.0f;
+
+                flyingSpeed = currentFlyingSpeed * powerFactor * carryingWeightFactor;
+
+                flyingVelocity = meshRootTransform.forward * flyingSpeed;
+
+                rootTransform.position += flyingVelocity * Time.deltaTime;
 
                 totalTurningDegree = targetMeshLocalRotationY - targetMeshLocalRotationZ;
 

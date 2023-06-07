@@ -40,7 +40,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6701735902098515411}
   m_Layer: 0
-  m_Name: Mesh
+  m_Name: MeshRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -280,7 +280,7 @@ MonoBehaviour:
   springArmLocalReferenceTransform: {fileID: 6701735901503541208}
   cameraTransform: {fileID: 6701735902518962124}
   rollRootTransform: {fileID: 6701735902608946465}
-  meshTransform: {fileID: 6701735902098515411}
+  meshRootTransform: {fileID: 6701735902098515411}
   cameraLookAtOffsetY: 0.5
   freezeMeshRotationX: 0
   normalFlyingSpeed: 20
@@ -288,6 +288,7 @@ MonoBehaviour:
   boostAcceleration: 12
   slowDownAcceleration: 10
   airDrag: 2.5
+  hoverMode: 0
   meshYawTurningSmoothingFactor: 4
   maximumMeshPitchAngle: 25
   meshPitchTurningSmoothingFactor: 2
@@ -303,7 +304,34 @@ MonoBehaviour:
   powerDecreaseSpeedWhenBoosting: 1.5
   speedRemainingPowerRatioAnimationCurve:
     serializedVersion: 2
-    m_Curve: []
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: -0.0153846005
+      outSlope: -0.0153846005
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.975
+      value: 0.985
+      inSlope: -0.059999943
+      outSlope: -0.059999943
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -39.40004
+      outSlope: -39.40004
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -312,14 +340,40 @@ MonoBehaviour:
   maximumCarryingWeight: 1000
   speedCarryingWeightRatioAnimationCurve:
     serializedVersion: 2
-    m_Curve: []
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: -0.0153846005
+      outSlope: -0.0153846005
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.975
+      value: 0.985
+      inSlope: -0.059999943
+      outSlope: -0.059999943
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -39.40004
+      outSlope: -39.40004
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
   isTurnedOff: 0
   enabledFlyingLogic: 1
   inAir: 0
-  hoverMode: 0
   flyingDirection: {x: 0, y: 0, z: 0}
   currentFlyingSpeed: 0
   flyingVelocity: {x: 0, y: 0, z: 0}

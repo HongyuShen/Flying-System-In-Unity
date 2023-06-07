@@ -407,7 +407,7 @@ MonoBehaviour:
   manager: {fileID: 0}
   activated: 1
   cameraSpeed: 350
-  characterMovementSpeed: 15
+  characterMovementSpeed: 50
 --- !u!1 &6019644762702687056
 GameObject:
   m_ObjectHideFlags: 0

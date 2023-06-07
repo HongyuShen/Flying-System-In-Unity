@@ -4,14 +4,15 @@ public class CreatureFlyingSystem : MonoBehaviour
 {
     [Header("Object References")]
     public Transform rootTransform;
-    public Transform meshTransform;
+    public Transform meshRootTransform;
     public Transform cameraTransform;
 
     [Header("Camera Attributes")]
-    public float cameraLookAtOffsetY = 0.5f;
+    public float cameraLookAtMeshOffsetY = 0.5f;
 
     [Header("Creature Attributes")]
-    public float minimumTakeOffSpeed = 0.0f;
+    [Range(0.0f, 90.0f)]
+    public float takeOffAngle = 30.0f;
     public float normalFlyingSpeed = 10.0f;
     public float maximumFlyingSpeed = 15.0f;
     public float boostAcceleration = 12.0f;
@@ -23,21 +24,28 @@ public class CreatureFlyingSystem : MonoBehaviour
     public float meshMaximumTurningRotationZ = 25.0f;
     [Range(0.0f, 1.0f)]
     public float meshRotationZSmoothingFactor = 0.125f;
+    public bool resetMeshRotationAfterLanding = true;
 
+    [Header("Diving Attributes")]
     public bool canDive = true;
+    public float maximumDivingSpeed = 500.0f;
     [Range(0.0f, 90.0f)]
     public float divingStartAngle = 30.0f;
+    public float decelerationAfterDiving = 5.0f;
 
     [Header("Custom Attributes")]
     public float g = 9.8f;
     public bool calculateStaminaConsumption = true;
+    public float currentStamina = 200.0f;
     public float maximumStamina = 200.0f;
     public float staminaDecreaseSpeed = 0.25f;
     public float staminaDecreaseSpeedWhenBoosting = 1.5f;
+    public float staminaRecoverySpeed = 4.0f;
     public AnimationCurve speedTirednessRatioAnimationCurve;
 
     public bool calculateCarryingWeight = true;
-    public float maximumCarryingWeight = 100.0f;
+    public float currentCarryingWeight = 10.0f;
+    public float maximumCarryingWeight = 10.0f;
     public AnimationCurve speedCarryingWeightRatioAnimationCurve;
 
     // Flying attributes
@@ -48,20 +56,30 @@ public class CreatureFlyingSystem : MonoBehaviour
     public bool inAir = false;
 
     [HideInInspector]
+    public bool inAirflow = false;
+
+    [HideInInspector]
+    public bool stopFlying = false;
+
+    [HideInInspector]
     public Vector3 flyingDirection;
 
     [HideInInspector]
-    public float currentFlyingSpeed;
+    public float flyingSpeed;
 
     [HideInInspector]
     public Vector3 flyingVelocity;
 
     [HideInInspector]
     public bool flyingInNormalSpeed = false;
+
     [HideInInspector]
     public bool boosting = false;
+
     [HideInInspector]
     public bool slowingDown = false, fullStop = false;
+
+    private float currentFlyingSpeed;
 
     private Vector3 targetCharacterPosition;
 
@@ -79,17 +97,18 @@ public class CreatureFlyingSystem : MonoBehaviour
     public bool diving = false;
     private float verticalAcceleration;
     private float verticalSpeed;
-    private float idealFlyingSpeed;
 
-    // Rotation Lerp variables
+    // Airflow variables
+    private float airflowSpeed;
+    private float airflowIntensity;
+    private float airflowAcceleration;
+    private float airflowFadeOutAcceleration;
+
+    // Rotation Lerp function variables
     private float increaseAngle;
 
-    [HideInInspector]
-    public float currentStamina;
     private float staminaFactor = 1.0f;
 
-    [HideInInspector]
-    public float currentCarryingWeight;
     private float carryingWeightFactor = 1.0f;
 
     void Start()
@@ -105,22 +124,27 @@ public class CreatureFlyingSystem : MonoBehaviour
 
     public Quaternion GetRotation()
     {
-        return meshTransform.rotation;
+        return meshRootTransform.rotation;
     }
 
     public void TakeOff()
     {
+        targetMeshLocalRotation = meshRootTransform.localRotation;
+        meshRootTransform.localRotation = Quaternion.Euler(-takeOffAngle, meshRootTransform.localRotation.eulerAngles.y, meshRootTransform.localRotation.eulerAngles.z);
+        flyingDirection = meshRootTransform.forward;
+        meshRootTransform.localRotation = targetMeshLocalRotation;
+
+        currentFlyingSpeed = normalFlyingSpeed;
+
         inAir = true;
-    }
-
-    public void Grab()
-    {
-
     }
 
     public void Land()
     {
         inAir = false;
+
+        if (resetMeshRotationAfterLanding)
+            meshRootTransform.localRotation = Quaternion.Euler(0.0f, meshRootTransform.localRotation.eulerAngles.y, 0.0f);
     }
 
     public void FlyForward()
@@ -155,19 +179,19 @@ public class CreatureFlyingSystem : MonoBehaviour
     {
         if (Mathf.Abs(value) > 0.025f)
         {
-            flyingDirection = (rootTransform.position + new Vector3(0.0f, cameraLookAtOffsetY, 0.0f) - cameraTransform.position).normalized;
+            flyingDirection = (rootTransform.position + new Vector3(0.0f, cameraLookAtMeshOffsetY, 0.0f) - cameraTransform.position).normalized;
 
-            targetMeshLocalRotation = Quaternion.LookRotation(flyingDirection, meshTransform.up);
+            targetMeshLocalRotation = Quaternion.LookRotation(flyingDirection, meshRootTransform.up);
 
             relativeRotationY = 0.0f;
             rotationYAlignmentPercentage = 0.0f;
 
-            if (meshTransform.localRotation.eulerAngles.y > 270.0f && targetMeshLocalRotation.eulerAngles.y < 90.0f)
-                deltaRotationY = 360.0f - meshTransform.localRotation.eulerAngles.y + targetMeshLocalRotation.eulerAngles.y;
-            else if (meshTransform.localRotation.eulerAngles.y < 90.0f && targetMeshLocalRotation.eulerAngles.y > 270.0f)
-                deltaRotationY = 360.0f - targetMeshLocalRotation.eulerAngles.y + meshTransform.localRotation.eulerAngles.y;
+            if (meshRootTransform.localRotation.eulerAngles.y > 270.0f && targetMeshLocalRotation.eulerAngles.y < 90.0f)
+                deltaRotationY = 360.0f - meshRootTransform.localRotation.eulerAngles.y + targetMeshLocalRotation.eulerAngles.y;
+            else if (meshRootTransform.localRotation.eulerAngles.y < 90.0f && targetMeshLocalRotation.eulerAngles.y > 270.0f)
+                deltaRotationY = 360.0f - targetMeshLocalRotation.eulerAngles.y + meshRootTransform.localRotation.eulerAngles.y;
             else
-                deltaRotationY = Mathf.Abs(targetMeshLocalRotation.eulerAngles.y - meshTransform.localRotation.eulerAngles.y);
+                deltaRotationY = Mathf.Abs(targetMeshLocalRotation.eulerAngles.y - meshRootTransform.localRotation.eulerAngles.y);
 
             if (Mathf.Abs(deltaRotationY) > 10.0f)
             {
@@ -181,6 +205,20 @@ public class CreatureFlyingSystem : MonoBehaviour
         }
     }
 
+    public void AddAirflowForce(float intensity, float acceleration, float fadeOutAcceleration)
+    {
+        airflowIntensity = intensity;
+        airflowAcceleration = acceleration;
+        airflowFadeOutAcceleration = fadeOutAcceleration;
+
+        inAirflow = true;
+    }
+
+    public void EndAirflowForce()
+    {
+        inAirflow = false;
+    }
+
     void Fly()
     {
         if (enabledFlyingLogic)
@@ -191,7 +229,7 @@ public class CreatureFlyingSystem : MonoBehaviour
                 {
                     rotationYComponent = meshHorizontalTurningSpeed * Time.deltaTime;
 
-                    currentMeshLocalRotationY = RotationLerp(meshTransform.localRotation.eulerAngles.y, targetMeshLocalRotation.eulerAngles.y, rotationYComponent);
+                    currentMeshLocalRotationY = RotationLerp(meshRootTransform.localRotation.eulerAngles.y, targetMeshLocalRotation.eulerAngles.y, rotationYComponent);
 
                     if (!alignedToTargetDirection)
                     {
@@ -202,14 +240,14 @@ public class CreatureFlyingSystem : MonoBehaviour
                         if (rotationYAlignmentPercentage > 0.985f)
                             alignedToTargetDirection = true;
 
-                        targetMeshLocalRotationZ = RotationLerp(meshTransform.localRotation.eulerAngles.z, turningDirection * meshMaximumTurningRotationZ, rotationYAlignmentPercentage * meshRotationZSmoothingFactor);
+                        targetMeshLocalRotationZ = RotationLerp(meshRootTransform.localRotation.eulerAngles.z, turningDirection * meshMaximumTurningRotationZ, rotationYAlignmentPercentage * meshRotationZSmoothingFactor);
                     }
                     else
                     {
-                        targetMeshLocalRotationZ = RotationLerp(meshTransform.localRotation.eulerAngles.z, 0.0f, rotationYComponent);
+                        targetMeshLocalRotationZ = RotationLerp(meshRootTransform.localRotation.eulerAngles.z, 0.0f, rotationYComponent);
                     }
 
-                    meshTransform.localRotation = Quaternion.Euler(RotationLerp(meshTransform.localRotation.eulerAngles.x, targetMeshLocalRotation.eulerAngles.x, meshVerticalTurningSpeed * Time.deltaTime), currentMeshLocalRotationY, targetMeshLocalRotationZ);
+                    meshRootTransform.localRotation = Quaternion.Euler(RotationLerp(meshRootTransform.localRotation.eulerAngles.x, targetMeshLocalRotation.eulerAngles.x, meshVerticalTurningSpeed * Time.deltaTime), currentMeshLocalRotationY, targetMeshLocalRotationZ);
                 }
 
                 if (calculateStaminaConsumption)
@@ -223,78 +261,125 @@ public class CreatureFlyingSystem : MonoBehaviour
                     carryingWeightFactor = 1.0f;
 
                 // Diving
-                if (meshTransform.localRotation.eulerAngles.x < 90.0f && meshTransform.localRotation.eulerAngles.x > divingStartAngle)
+                if (!inAirflow && canDive && meshRootTransform.localRotation.eulerAngles.x < 89.995f && meshRootTransform.localRotation.eulerAngles.x > divingStartAngle)
                 {
                     diving = true;
 
-                    if (boosting)
-                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
-                    else if (slowingDown || fullStop)
+                    if (slowingDown || fullStop)
                     {
                         currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
-                        verticalAcceleration = slowDownAcceleration - g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
+                        verticalAcceleration = slowDownAcceleration - g * Mathf.Cos((90.0f - meshRootTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
                     }
                     else
                     {
-                        idealFlyingSpeed = normalFlyingSpeed + g * Mathf.Sin(meshTransform.localRotation.eulerAngles.x * Mathf.Deg2Rad);
-
-                        if (currentFlyingSpeed < idealFlyingSpeed)
-                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, idealFlyingSpeed);
-                        else
-                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, idealFlyingSpeed, maximumFlyingSpeed);
-
-                        verticalAcceleration = -g * Mathf.Cos((90.0f - meshTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
+                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumDivingSpeed);
+                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + g * Mathf.Sin(meshRootTransform.localRotation.eulerAngles.x * Mathf.Deg2Rad) * Time.deltaTime, 0.0f, maximumDivingSpeed);
+                        verticalAcceleration = -g * Mathf.Cos((90.0f - meshRootTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad);
                     }
 
-                    currentFlyingSpeed *= staminaFactor * carryingWeightFactor;
+                    flyingSpeed = currentFlyingSpeed * staminaFactor * carryingWeightFactor;
+                    flyingVelocity = flyingDirection * flyingSpeed;
 
-                    flyingVelocity = meshTransform.forward * currentFlyingSpeed;
-
-                    verticalSpeed = verticalSpeed + verticalAcceleration * Time.deltaTime;
+                    verticalSpeed += verticalAcceleration * Time.deltaTime;
 
                     targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime + new Vector3(0.0f, Mathf.Clamp(verticalSpeed * Time.deltaTime - 0.5f * verticalAcceleration * Time.deltaTime * Time.deltaTime, -99999999.0f, 0.0f), 0.0f);
                 }
                 else
                 {
-                    diving = false;
-
-                    if (verticalSpeed < -0.1f)
-                        verticalSpeed += airDrag * Time.deltaTime;
-                    else
-                        verticalSpeed = 0.0f;
-
-                    if (boosting)
+                    if (!stopFlying)
                     {
-                        if (calculateStaminaConsumption)
-                            currentStamina -= staminaDecreaseSpeedWhenBoosting * Time.deltaTime;
+                        diving = false;
 
-                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
-                    }
-                    else if (slowingDown || fullStop)
-                    {
-                        if (calculateStaminaConsumption)
-                            currentStamina -= staminaDecreaseSpeedWhenBoosting * Time.deltaTime;
-
-                        currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
-                    }
-                    else
-                    {
-                        if (calculateStaminaConsumption)
-                            currentStamina -= staminaDecreaseSpeed * Time.deltaTime;
-
-                        idealFlyingSpeed = normalFlyingSpeed + verticalSpeed;
-
-                        if (currentFlyingSpeed < idealFlyingSpeed)
-                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, idealFlyingSpeed);
+                        if (verticalSpeed < -0.1f)
+                            verticalSpeed += airDrag * Mathf.Cos((meshRootTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad) * Time.deltaTime;
                         else
-                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, idealFlyingSpeed, maximumFlyingSpeed);
+                            verticalSpeed = 0.0f;
+
+                        if (boosting)
+                        {
+                            if (calculateStaminaConsumption)
+                                currentStamina = Mathf.Clamp(currentStamina - staminaDecreaseSpeed * Time.deltaTime, 0.0f, maximumStamina);
+
+                            if (meshRootTransform.localRotation.eulerAngles.x > 270.0f)
+                            {
+                                if (currentFlyingSpeed > maximumFlyingSpeed)
+                                    currentFlyingSpeed -= (decelerationAfterDiving + decelerationAfterDiving * Mathf.Sin((360.0f - meshRootTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad)) * Time.deltaTime;
+                                else
+                                    currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
+                            }
+                            else
+                            {
+                                if (currentFlyingSpeed > maximumFlyingSpeed)
+                                    currentFlyingSpeed -= decelerationAfterDiving * Time.deltaTime;
+                                else
+                                    currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, maximumFlyingSpeed);
+                            }
+                        }
+                        else if (slowingDown || fullStop)
+                        {
+                            if (calculateStaminaConsumption)
+                                currentStamina = Mathf.Clamp(currentStamina - staminaDecreaseSpeed * Time.deltaTime, 0.0f, maximumStamina);
+
+                            if (meshRootTransform.localRotation.eulerAngles.x > 270.0f)
+                            {
+                                if (currentFlyingSpeed > normalFlyingSpeed)
+                                    currentFlyingSpeed -= (decelerationAfterDiving + decelerationAfterDiving * Mathf.Sin((360.0f - meshRootTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad)) * Time.deltaTime;
+                            }
+                            else
+                            {
+                                if (currentFlyingSpeed > normalFlyingSpeed)
+                                    currentFlyingSpeed -= decelerationAfterDiving * Time.deltaTime;
+                            }
+
+                            currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed - slowDownAcceleration * Time.deltaTime, 0.0f, currentFlyingSpeed);
+                        }
+                        else
+                        {
+                            if (calculateStaminaConsumption)
+                                currentStamina = Mathf.Clamp(currentStamina - staminaDecreaseSpeed * Time.deltaTime, 0.0f, maximumStamina);
+
+                            if (meshRootTransform.localRotation.eulerAngles.x > 270.0f)
+                            {
+                                if (currentFlyingSpeed > normalFlyingSpeed)
+                                    currentFlyingSpeed -= (decelerationAfterDiving + decelerationAfterDiving * Mathf.Sin((360.0f - meshRootTransform.localRotation.eulerAngles.x) * Mathf.Deg2Rad)) * Time.deltaTime;
+                                else
+                                    currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, normalFlyingSpeed);
+                            }
+                            else
+                            {
+                                if (currentFlyingSpeed > normalFlyingSpeed)
+                                    currentFlyingSpeed -= decelerationAfterDiving * Time.deltaTime;
+                                else
+                                    currentFlyingSpeed = Mathf.Clamp(currentFlyingSpeed + boostAcceleration * Time.deltaTime, 0.0f, normalFlyingSpeed);
+                            }
+                        }
+
+                        flyingSpeed = currentFlyingSpeed * staminaFactor * carryingWeightFactor;
+                        flyingVelocity = flyingDirection * flyingSpeed;
+
+                        if (airflowSpeed > 0.01f)
+                        {
+                            airflowSpeed -= airflowFadeOutAcceleration * Time.deltaTime;
+
+                            targetCharacterPosition = rootTransform.position + (flyingVelocity + Vector3.up * airflowSpeed) * Time.deltaTime;
+                        }
+                        else
+                            targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime;
                     }
+                    else
+                    {
+                        currentStamina = Mathf.Clamp(currentStamina + staminaRecoverySpeed * Time.deltaTime, 0.0f, maximumStamina);
 
-                    currentFlyingSpeed *= staminaFactor * carryingWeightFactor;
+                        flyingSpeed = currentFlyingSpeed;
+                        flyingVelocity = flyingDirection * flyingSpeed;
 
-                    flyingVelocity = meshTransform.forward * currentFlyingSpeed;
+                        if (inAirflow)
+                        {
+                            airflowSpeed = Mathf.Clamp(airflowSpeed + airflowAcceleration * Time.deltaTime, 0.0f, airflowIntensity);
 
-                    targetCharacterPosition = rootTransform.position + flyingVelocity * Time.deltaTime;
+                            targetCharacterPosition = rootTransform.position + (flyingVelocity + Vector3.up * airflowSpeed) * Time.deltaTime;
+                        }
+                    }
                 }
 
                 rootTransform.position = targetCharacterPosition;
